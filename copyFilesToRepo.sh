@@ -11,3 +11,6 @@ cp IMultiResourceManagerService.aidl /home/howard/Nexus4/Nexus4Origin/frameworks
 
 rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/Android.mk
 cp Android.mk /home/howard/Nexus4/Nexus4Origin/frameworks/base/
+
+rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/PowerManager.java
+cp PowerManager.java /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
