@@ -713,6 +713,15 @@ public final class PowerManager {
                 // should immediately acquire the wake lock once again despite never having
                 // been explicitly released by the keyguard.
                 mHandler.removeCallbacks(mReleaser);
+                
+                if ((mFlags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0) {
+                	StringBuffer sb = new StringBuffer(128);
+    				sb.append("Time ");
+    				sb.append(System.currentTimeMillis()/1000);
+    				sb.append(" MyLogcat MyPowerManager Wakelock ACQUIRE_CAUSES_WAKEUP");
+                	Log.i(TAG, sb.toString());
+                }
+                
                 try {
                     mService.acquireWakeLock(mToken, mFlags, mTag, mWorkSource);
                 } catch (RemoteException e) {
@@ -815,6 +824,34 @@ public final class PowerManager {
             }
         }
 
+        private String getLockLevelString() {
+            switch (mFlags & PowerManager.WAKE_LOCK_LEVEL_MASK) {
+                case PowerManager.FULL_WAKE_LOCK:
+                    return "FULL_WAKE_LOCK                ";
+                case PowerManager.SCREEN_BRIGHT_WAKE_LOCK:
+                    return "SCREEN_BRIGHT_WAKE_LOCK       ";
+                case PowerManager.SCREEN_DIM_WAKE_LOCK:
+                    return "SCREEN_DIM_WAKE_LOCK          ";
+                case PowerManager.PARTIAL_WAKE_LOCK:
+                    return "PARTIAL_WAKE_LOCK             ";
+                case PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK:
+                    return "PROXIMITY_SCREEN_OFF_WAKE_LOCK";
+                default:
+                    return "???                           ";
+            }
+        }
+
+        private String getLockFlagsString() {
+            String result = "";
+            if ((mFlags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0) {
+                result += " ACQUIRE_CAUSES_WAKEUP";
+            }
+            if ((mFlags & PowerManager.ON_AFTER_RELEASE) != 0) {
+                result += " ON_AFTER_RELEASE";
+            }
+            return result;
+        }
+        
         @Override
         public String toString() {
             synchronized (mToken) {
