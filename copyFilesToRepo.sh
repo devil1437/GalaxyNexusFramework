@@ -1,16 +1,51 @@
 #!/bin/bash
 
-rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/MultiResourceManagerService.java
-cp MultiResourceManagerService.java /home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
+MultiResourceManagerService=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/MultiResourceManagerService.java
+MultiResourceManagerServiceFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
 
-rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/SystemServer.java
-cp SystemServer.java /home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
+SystemServer=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/SystemServer.java
+SystemServerFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
 
-rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/IMultiResourceManagerService.aidl
-cp IMultiResourceManagerService.aidl /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+IMultiResourceManagerService=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/IMultiResourceManagerService.aidl
+IMultiResourceManagerServiceFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
 
-rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/Android.mk
-cp Android.mk /home/howard/Nexus4/Nexus4Origin/frameworks/base/
+AndroidMk=/home/howard/Nexus4/Nexus4Origin/frameworks/base/Android.mk
+AndroidMkFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/
 
-rm -f /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/PowerManager.java
-cp PowerManager.java /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+PowerManager=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/PowerManager.java
+PowerManagerFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+
+if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
+	echo "MultiResourceManagerService.java is same"
+else
+	rm -f $MultiResourceManagerService
+	cp MultiResourceManagerService.java $MultiResourceManagerServiceFolder
+fi
+
+if diff $SystemServer SystemServer.java >/dev/null ; then
+	echo "SystemServer.java is same"
+else
+	rm -f $SystemServer
+	cp SystemServer.java $SystemServerFolder
+fi
+
+if diff $IMultiResourceManagerService IMultiResourceManagerService.aidl >/dev/null ; then
+	echo "IMultiResourceManagerService.aidl is same"
+else
+	rm -f $IMultiResourceManagerService
+	cp IMultiResourceManagerService.aidl /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+fi
+
+if diff $AndroidMk Android.mk >/dev/null ; then
+	echo "Android.mk is same"
+else
+	rm -f $AndroidMk
+	cp Android.mk /home/howard/Nexus4/Nexus4Origin/frameworks/base/
+fi
+
+if diff $PowerManager PowerManager.java >/dev/null ; then
+	echo "PowerManager.java is same"
+else
+	rm -f $PowerManager
+	cp PowerManager.java /home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+fi
