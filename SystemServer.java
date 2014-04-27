@@ -210,6 +210,9 @@ class ServerThread extends Thread {
             Slog.i(TAG, "Entropy Mixer");
             ServiceManager.addService("entropy", new EntropyMixer());
 
+			Slog.i(TAG, "Multi-Resource Manager Service");
+            ServiceManager.addService("MultiResourceManagerService", new MultiResourceManagerService());
+
             Slog.i(TAG, "Power Manager");
             power = new PowerManagerService();
             ServiceManager.addService(Context.POWER_SERVICE, power);

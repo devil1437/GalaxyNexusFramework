@@ -138,6 +138,7 @@ LOCAL_SRC_FILES += \
 	core/java/android/os/IMessenger.aidl \
 	core/java/android/os/INetworkManagementService.aidl \
 	core/java/android/os/IPermissionController.aidl \
+	core/java/android/os/IMultiResourceManagerService.aidl \
 	core/java/android/os/IPowerManager.aidl \
 	core/java/android/os/IRemoteCallback.aidl \
 	core/java/android/os/ISchedulingPolicyService.aidl \
