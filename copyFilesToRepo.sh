@@ -1,22 +1,27 @@
 #!/bin/bash
 
-MultiResourceManagerService=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/MultiResourceManagerService.java
-MultiResourceManagerServiceFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
+AOSPPath="/home/howard/Nexus4/Nexus4Origin/"
 
-SystemServer=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/SystemServer.java
-SystemServerFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/
+MultiResourceManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/MultiResourceManagerService.java"
+MultiResourceManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
-IMultiResourceManagerService=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/IMultiResourceManagerService.aidl
-IMultiResourceManagerServiceFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+SystemServer=$AOSPPath"frameworks/base/services/java/com/android/server/SystemServer.java"
+SystemServerFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
-AndroidMk=/home/howard/Nexus4/Nexus4Origin/frameworks/base/Android.mk
-AndroidMkFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/
+IMultiResourceManagerService=$AOSPPath"frameworks/base/core/java/android/os/IMultiResourceManagerService.aidl"
+IMultiResourceManagerServiceFolder=$AOSPPath"frameworks/base/core/java/android/os/"
 
-PowerManager=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/PowerManager.java
-PowerManagerFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/core/java/android/os/
+AndroidMk=$AOSPPath"frameworks/base/Android.mk"
+AndroidMkFolder=$AOSPPath"frameworks/base/"
 
-PowerManagerService=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/power/PowerManagerService.java
-PowerManagerServiceFolder=/home/howard/Nexus4/Nexus4Origin/frameworks/base/services/java/com/android/server/power/
+PowerManager=$AOSPPath"frameworks/base/core/java/android/os/PowerManager.java"
+PowerManagerFolder=$AOSPPath"frameworks/base/core/java/android/os/"
+
+PowerManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/power/PowerManagerService.java"
+PowerManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/power/"
+
+DisplayPowerController=$AOSPPath"frameworks/base/services/java/com/android/server/power/DisplayPowerController.java"
+DisplayPowerControllerFolder=$AOSPPath"frameworks/base/services/java/com/android/server/power/"
 
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
@@ -58,4 +63,11 @@ if diff $PowerManagerService PowerManagerService.java >/dev/null ; then
 else
 	rm -f $PowerManagerService
 	cp PowerManagerService.java $PowerManagerServiceFolder
+fi
+
+if diff $DisplayPowerController DisplayPowerController.java >/dev/null ; then
+	echo "DisplayPowerController.java is same"
+else
+	rm -f $DisplayPowerController
+	cp DisplayPowerController.java $DisplayPowerControllerFolder
 fi
