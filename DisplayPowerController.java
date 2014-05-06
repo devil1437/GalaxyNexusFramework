@@ -340,6 +340,8 @@ final class DisplayPowerController {
     // Twilight changed.  We might recalculate auto-brightness values.
     private boolean mTwilightChanged;
 
+	private int mCount = 0;
+
     /**
      * Creates the display power controller.
      */
@@ -665,40 +667,43 @@ final class DisplayPowerController {
         // Animate the screen on or off.
         if (!mScreenOffBecauseOfProximity) {
             if (wantScreenOn(mPowerRequest.screenState)) {
-                // Want screen on.
-                // Wait for previous off animation to complete beforehand.
-                // It is relatively short but if we cancel it and switch to the
-                // on animation immediately then the results are pretty ugly.
-                if (!mElectronBeamOffAnimator.isStarted()) {
-                    // Turn the screen on.  The contents of the screen may not yet
-                    // be visible if the electron beam has not been dismissed because
-                    // its last frame of animation is solid black.
-                    setScreenOn(true);
+				if(DEBUG){
+					Slog.d(TAG, "MyLogcat MyDisplayPowerController updatePowerState wantScreenOn mCount " + mCount);
+				}
+		        // Want screen on.
+		        // Wait for previous off animation to complete beforehand.
+		        // It is relatively short but if we cancel it and switch to the
+		        // on animation immediately then the results are pretty ugly.
+		        if (!mElectronBeamOffAnimator.isStarted()) {
+		                // Turn the screen on.  The contents of the screen may not yet
+		                // be visible if the electron beam has not been dismissed because
+		                // its last frame of animation is solid black.
+		                setScreenOn(true);
 
-                    if (mPowerRequest.blockScreenOn
-                            && mPowerState.getElectronBeamLevel() == 0.0f) {
-                        blockScreenOn();
-                    } else {
-                        unblockScreenOn();
-                        if (USE_ELECTRON_BEAM_ON_ANIMATION) {
-                            if (!mElectronBeamOnAnimator.isStarted()) {
-                                if (mPowerState.getElectronBeamLevel() == 1.0f) {
-                                    mPowerState.dismissElectronBeam();
-                                } else if (mPowerState.prepareElectronBeam(
-                                        mElectronBeamFadesConfig ?
-                                                ElectronBeam.MODE_FADE :
-                                                        ElectronBeam.MODE_WARM_UP)) {
-                                    mElectronBeamOnAnimator.start();
-                                } else {
-                                    mElectronBeamOnAnimator.end();
-                                }
-                            }
-                        } else {
-                            mPowerState.setElectronBeamLevel(1.0f);
-                            mPowerState.dismissElectronBeam();
-                        }
-                    }
-                }
+		                if (mPowerRequest.blockScreenOn
+		                        && mPowerState.getElectronBeamLevel() == 0.0f) {
+		                    blockScreenOn();
+		                } else {
+		                    unblockScreenOn();
+		                    if (USE_ELECTRON_BEAM_ON_ANIMATION) {
+		                        if (!mElectronBeamOnAnimator.isStarted()) {
+		                            if (mPowerState.getElectronBeamLevel() == 1.0f) {
+		                                mPowerState.dismissElectronBeam();
+		                            } else if (mPowerState.prepareElectronBeam(
+		                                    mElectronBeamFadesConfig ?
+		                                            ElectronBeam.MODE_FADE :
+		                                                    ElectronBeam.MODE_WARM_UP)) {
+		                                mElectronBeamOnAnimator.start();
+		                            } else {
+		                                mElectronBeamOnAnimator.end();
+		                            }
+		                        }
+		                    } else {
+		                        mPowerState.setElectronBeamLevel(1.0f);
+		                        mPowerState.dismissElectronBeam();
+		                    }
+		                }
+		            }
             } else {
                 // Want screen off.
                 // Wait for previous on animation to complete beforehand.

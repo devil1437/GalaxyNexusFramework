@@ -593,6 +593,15 @@ public final class PowerManagerService extends IPowerManager.Stub
                         + ", flags=0x" + Integer.toHexString(flags)
                         + ", tag=\"" + tag + "\", ws=" + ws + ", uid=" + uid + ", pid=" + pid);
             }
+			if (DEBUG) {
+				if ((flags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0) {
+                	StringBuffer sb = new StringBuffer(128);
+    				sb.append("Time ");
+    				sb.append(System.currentTimeMillis()/1000);
+    				sb.append(" MyLogcat MyPowerManager Wakelock ACQUIRE_CAUSES_WAKEUP");
+                	Slog.i(TAG, sb.toString());
+                }			
+			}
 
             WakeLock wakeLock;
             int index = findWakeLockIndexLocked(lock);

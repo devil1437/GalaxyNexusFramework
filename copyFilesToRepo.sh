@@ -26,6 +26,7 @@ DisplayPowerControllerFolder=$AOSPPath"frameworks/base/services/java/com/android
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
 else
+	echo "Copy MultiResourceManagerService.java..."
 	rm -f $MultiResourceManagerService
 	cp MultiResourceManagerService.java $MultiResourceManagerServiceFolder
 fi
@@ -33,6 +34,7 @@ fi
 if diff $SystemServer SystemServer.java >/dev/null ; then
 	echo "SystemServer.java is same"
 else
+	echo "Copy SystemServer.java..."
 	rm -f $SystemServer
 	cp SystemServer.java $SystemServerFolder
 fi
@@ -40,6 +42,7 @@ fi
 if diff $IMultiResourceManagerService IMultiResourceManagerService.aidl >/dev/null ; then
 	echo "IMultiResourceManagerService.aidl is same"
 else
+	echo "Copy IMultiResourceManagerService.aidl..."
 	rm -f $IMultiResourceManagerService
 	cp IMultiResourceManagerService.aidl $IMultiResourceManagerServiceFolder
 fi
@@ -47,6 +50,7 @@ fi
 if diff $AndroidMk Android.mk >/dev/null ; then
 	echo "Android.mk is same"
 else
+	echo "Copy Android.mk..."
 	rm -f $AndroidMk
 	cp Android.mk $AndroidMkFolder
 fi
@@ -54,6 +58,7 @@ fi
 if diff $PowerManager PowerManager.java >/dev/null ; then
 	echo "PowerManager.java is same"
 else
+	echo "Copy PowerManager.java..."
 	rm -f $PowerManager
 	cp PowerManager.java $PowerManagerFolder
 fi
@@ -61,6 +66,7 @@ fi
 if diff $PowerManagerService PowerManagerService.java >/dev/null ; then
 	echo "PowerManagerService.java is same"
 else
+	echo "Copy PowerManagerService.java..."
 	rm -f $PowerManagerService
 	cp PowerManagerService.java $PowerManagerServiceFolder
 fi
@@ -68,6 +74,7 @@ fi
 if diff $DisplayPowerController DisplayPowerController.java >/dev/null ; then
 	echo "DisplayPowerController.java is same"
 else
+	echo "Copy DisplayPowerController.java..."
 	rm -f $DisplayPowerController
 	cp DisplayPowerController.java $DisplayPowerControllerFolder
 fi

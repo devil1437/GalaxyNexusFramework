@@ -714,14 +714,6 @@ public final class PowerManager {
                 // been explicitly released by the keyguard.
                 mHandler.removeCallbacks(mReleaser);
                 
-                if ((mFlags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0) {
-                	StringBuffer sb = new StringBuffer(128);
-    				sb.append("Time ");
-    				sb.append(System.currentTimeMillis()/1000);
-    				sb.append(" MyLogcat MyPowerManager Wakelock ACQUIRE_CAUSES_WAKEUP");
-                	Log.i(TAG, sb.toString());
-                }
-                
                 try {
                     mService.acquireWakeLock(mToken, mFlags, mTag, mWorkSource);
                 } catch (RemoteException e) {
