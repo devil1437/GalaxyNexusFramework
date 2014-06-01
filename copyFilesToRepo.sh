@@ -29,6 +29,12 @@ NotificationManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/and
 AlarmManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/AlarmManagerService.java"
 AlarmManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
+AlarmManager=$AOSPPath"frameworks/base/core/java/android/app/AlarmManager.java"
+AlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+
+IAlarmManager=$AOSPPath"frameworks/base/core/java/android/app/IAlarmManager.aidl"
+IAlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+
 Context=$AOSPPath"frameworks/base/core/java/android/content/Context.java"
 ContextFolder=$AOSPPath"frameworks/base/core/java/android/content/"
 
@@ -102,6 +108,22 @@ else
 	echo "Copy AlarmManagerService.java..."
 	rm -f $AlarmManagerService
 	cp AlarmManagerService.java $AlarmManagerServiceFolder
+fi
+
+if diff $AlarmManager AlarmManager.java >/dev/null ; then
+	echo "AlarmManager.java is same"
+else
+	echo "Copy AlarmManager.java..."
+	rm -f $AlarmManager
+	cp AlarmManager.java $AlarmManagerFolder
+fi
+
+if diff $IAlarmManager IAlarmManager.aidl >/dev/null ; then
+	echo "IAlarmManager.aidl is same"
+else
+	echo "Copy IAlarmManager.aidl..."
+	rm -f $IAlarmManager
+	cp IAlarmManager.aidl $IAlarmManagerFolder
 fi
 
 if diff $Context Context.java >/dev/null ; then
