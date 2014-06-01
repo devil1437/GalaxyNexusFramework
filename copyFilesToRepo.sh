@@ -29,6 +29,9 @@ NotificationManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/and
 AlarmManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/AlarmManagerService.java"
 AlarmManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
+Context=$AOSPPath"frameworks/base/core/java/android/content/Context.java"
+ContextFolder=$AOSPPath"frameworks/base/core/java/android/content/"
+
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
 else
@@ -99,4 +102,12 @@ else
 	echo "Copy AlarmManagerService.java..."
 	rm -f $AlarmManagerService
 	cp AlarmManagerService.java $AlarmManagerServiceFolder
+fi
+
+if diff $Context Context.java >/dev/null ; then
+	echo "Context.java is same"
+else
+	echo "Copy Context.java..."
+	rm -f $Context
+	cp Context.java $ContextFolder
 fi
