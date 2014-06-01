@@ -1820,6 +1820,8 @@ public abstract class Context {
      */
     public abstract Object getSystemService(String name);
 
+    public static final String RESOURCE_MANAGER_SERVICE = "multi-resource_manager";
+    
     /**
      * Use with {@link #getSystemService} to retrieve a
      * {@link android.os.PowerManager} for controlling power management,

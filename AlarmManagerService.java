@@ -16,6 +16,7 @@
 
 package com.android.server;
 
+import android.app.Alarm;
 import android.app.Activity;
 import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
@@ -28,6 +29,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.MultiResourceManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -106,6 +108,8 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private final PendingIntent mTimeTickSender;
     private final PendingIntent mDateChangeSender;
 
+    private final boolean mEnableResouceManager = true;
+    
     private static final class InFlight extends Intent {
         final PendingIntent mPendingIntent;
         final Pair<String, ComponentName> mTarget;
@@ -424,7 +428,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         return false;
     }
     
-    private ArrayList<Alarm> getAlarmList(int type) {
+    public ArrayList<Alarm> getAlarmList(int type) {
         switch (type) {
             case AlarmManager.RTC_WAKEUP:              return mRtcWakeupAlarms;
             case AlarmManager.RTC:                     return mRtcAlarms;
@@ -481,29 +485,46 @@ class AlarmManagerService extends IAlarmManager.Stub {
     
     private void setLocked(Alarm alarm)
     {
-        if (mDescriptor != -1)
-        {
-            // The kernel never triggers alarms with negative wakeup times
-            // so we ensure they are positive.
-            long alarmSeconds, alarmNanoseconds;
-            if (alarm.when < 0) {
-                alarmSeconds = 0;
-                alarmNanoseconds = 0;
-            } else {
-                alarmSeconds = alarm.when / 1000;
-                alarmNanoseconds = (alarm.when % 1000) * 1000 * 1000;
-            }
-            
-            set(mDescriptor, alarm.type, alarmSeconds, alarmNanoseconds);
-        }
-        else
-        {
-            Message msg = Message.obtain();
-            msg.what = ALARM_EVENT;
-            
-            mHandler.removeMessages(ALARM_EVENT);
-            mHandler.sendMessageAtTime(msg, alarm.when);
-        }
+	    if (mDescriptor != -1)
+	    {
+	    	if (mEnableResouceManager)
+	    	{
+	    		MultiResourceManager mrm = (MultiResourceManager)context.getSystemService(Context.RESOURCE_MANAGER_SERVICE);
+	    		long when = mrm.getWakeUpTime();
+	    		long alarmSeconds, alarmNanoseconds;
+	    		
+	    		if (alarm.when < 0) {
+		            alarmSeconds = 0;
+		            alarmNanoseconds = 0;
+		        } else {
+		            alarmSeconds = alarm.when / 1000;
+		            alarmNanoseconds = (alarm.when % 1000) * 1000 * 1000;
+		        }
+		        
+		        set(mDescriptor, alarm.type, alarmSeconds, alarmNanoseconds);
+	    	} else {
+		        // The kernel never triggers alarms with negative wakeup times
+		        // so we ensure they are positive.
+		        long alarmSeconds, alarmNanoseconds;
+		        if (alarm.when < 0) {
+		            alarmSeconds = 0;
+		            alarmNanoseconds = 0;
+		        } else {
+		            alarmSeconds = alarm.when / 1000;
+		            alarmNanoseconds = (alarm.when % 1000) * 1000 * 1000;
+		        }
+		        
+		        set(mDescriptor, alarm.type, alarmSeconds, alarmNanoseconds);
+	    	}
+	    }
+	    else
+	    {
+	        Message msg = Message.obtain();
+	        msg.what = ALARM_EVENT;
+	            
+	        mHandler.removeMessages(ALARM_EVENT);
+	        mHandler.sendMessageAtTime(msg, alarm.when);
+	    }
     }
     
     @Override
@@ -737,46 +758,6 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 return -1;
             }
             return 0;
-        }
-    }
-    
-    private static class Alarm {
-        public int type;
-        public int count;
-        public long when;
-        public long repeatInterval;
-        public PendingIntent operation;
-        
-        public Alarm() {
-            when = 0;
-            repeatInterval = 0;
-            operation = null;
-        }
-        
-        @Override
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder(128);
-            sb.append("Alarm{ ");
-            sb.append(Integer.toHexString(System.identityHashCode(this)));
-            sb.append(" type ");
-            sb.append(type);
-            sb.append(" creatorPackage ");
-            sb.append(operation.getCreatorPackage());
-            sb.append(" creatorUid ");
-            sb.append(operation.getCreatorUid());
-			sb.append(" creatorUid ");
-            sb.append(operation.getCreatorUid());
-            sb.append(" }");
-            return sb.toString();
-        }
-
-        public void dump(PrintWriter pw, String prefix, long now) {
-            pw.print(prefix); pw.print("type="); pw.print(type);
-                    pw.print(" when="); TimeUtils.formatDuration(when, now, pw);
-                    pw.print(" repeatInterval="); pw.print(repeatInterval);
-                    pw.print(" count="); pw.println(count);
-            pw.print(prefix); pw.print("operation="); pw.println(operation);
         }
     }
     

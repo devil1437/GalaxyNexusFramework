@@ -17,6 +17,7 @@
 package android.app;
 
 import android.app.PendingIntent;
+import android.app.Alarm;
 
 /**
  * System private API for talking with the alarm manager service.
@@ -30,6 +31,7 @@ interface IAlarmManager {
     void setTime(long millis);
     void setTimeZone(String zone);
     void remove(in PendingIntent operation);
+    List<Alarm> getAlarmList(int type);
 }
 
 

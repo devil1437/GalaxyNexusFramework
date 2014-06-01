@@ -5,14 +5,23 @@ AOSPPath="/home/howard/Nexus4/Nexus4Origin/"
 MultiResourceManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/MultiResourceManagerService.java"
 MultiResourceManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
-SystemServer=$AOSPPath"frameworks/base/services/java/com/android/server/SystemServer.java"
-SystemServerFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
-
 IMultiResourceManagerService=$AOSPPath"frameworks/base/core/java/android/os/IMultiResourceManagerService.aidl"
 IMultiResourceManagerServiceFolder=$AOSPPath"frameworks/base/core/java/android/os/"
 
+MultiResourceManager=$AOSPPath"frameworks/base/core/java/android/os/MultiResourceManager.java"
+MultiResourceManagerFolder=$AOSPPath"frameworks/base/core/java/android/os/"
+
+SystemServer=$AOSPPath"frameworks/base/services/java/com/android/server/SystemServer.java"
+SystemServerFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
+
 AndroidMk=$AOSPPath"frameworks/base/Android.mk"
 AndroidMkFolder=$AOSPPath"frameworks/base/"
+
+Context=$AOSPPath"frameworks/base/core/java/android/content/Context.java"
+ContextFolder=$AOSPPath"frameworks/base/core/java/android/content/"
+
+ContextImpl=$AOSPPath"frameworks/base/core/java/android/app/ContextImpl.java"
+ContextImplFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
 PowerManager=$AOSPPath"frameworks/base/core/java/android/os/PowerManager.java"
 PowerManagerFolder=$AOSPPath"frameworks/base/core/java/android/os/"
@@ -35,8 +44,8 @@ AlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 IAlarmManager=$AOSPPath"frameworks/base/core/java/android/app/IAlarmManager.aidl"
 IAlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
-Context=$AOSPPath"frameworks/base/core/java/android/content/Context.java"
-ContextFolder=$AOSPPath"frameworks/base/core/java/android/content/"
+Alarm=$AOSPPath"frameworks/base/core/java/android/app/Alarm.java"
+AlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
@@ -46,20 +55,28 @@ else
 	cp MultiResourceManagerService.java $MultiResourceManagerServiceFolder
 fi
 
-if diff $SystemServer SystemServer.java >/dev/null ; then
-	echo "SystemServer.java is same"
-else
-	echo "Copy SystemServer.java..."
-	rm -f $SystemServer
-	cp SystemServer.java $SystemServerFolder
-fi
-
 if diff $IMultiResourceManagerService IMultiResourceManagerService.aidl >/dev/null ; then
 	echo "IMultiResourceManagerService.aidl is same"
 else
 	echo "Copy IMultiResourceManagerService.aidl..."
 	rm -f $IMultiResourceManagerService
 	cp IMultiResourceManagerService.aidl $IMultiResourceManagerServiceFolder
+fi
+
+if diff $MultiResourceManager MultiResourceManager.java >/dev/null ; then
+	echo "MultiResourceManager.java is same"
+else
+	echo "Copy MultiResourceManager.java..."
+	rm -f $MultiResourceManager
+	cp MultiResourceManager.java $MultiResourceManagerFolder
+fi
+
+if diff $SystemServer SystemServer.java >/dev/null ; then
+	echo "SystemServer.java is same"
+else
+	echo "Copy SystemServer.java..."
+	rm -f $SystemServer
+	cp SystemServer.java $SystemServerFolder
 fi
 
 if diff $AndroidMk Android.mk >/dev/null ; then
@@ -124,6 +141,14 @@ else
 	echo "Copy IAlarmManager.aidl..."
 	rm -f $IAlarmManager
 	cp IAlarmManager.aidl $IAlarmManagerFolder
+fi
+
+if diff $Alarm Alarm.java >/dev/null ; then
+	echo "Alarm.java is same"
+else
+	echo "Copy Alarm.java..."
+	rm -f $Alarm
+	cp Alarm.java $AlarmFolder
 fi
 
 if diff $Context Context.java >/dev/null ; then

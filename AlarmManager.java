@@ -16,6 +16,7 @@
 
 package android.app;
 
+import android.app.Alarm;
 import android.content.Intent;
 import android.os.RemoteException;
 
@@ -301,5 +302,13 @@ public class AlarmManager
             mService.setTimeZone(timeZone);
         } catch (RemoteException ex) {
         }
+    }
+    
+    public ArrayList<Alarm> getAlarmList(int type) {
+    	try {
+            return mService.getAlarmList(type);
+        } catch (RemoteException ex) {
+        }
+    	return null;
     }
 }
