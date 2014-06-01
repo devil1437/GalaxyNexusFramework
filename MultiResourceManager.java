@@ -1,12 +1,13 @@
 package android.os;
 
 import android.util.Log;
+import android.os.IMultiResourceManagerService;
 
 public class MultiResourceManager {
 	final String TAG = "MultiResourceManager";
-	private IMultiResourceManager mService;
+	private IMultiResourceManagerService mService;
 	
-	public MultiResourceManager(IMultiResourceManager service){
+	public MultiResourceManager(IMultiResourceManagerService service){
 		mService = service;
 	}
 	

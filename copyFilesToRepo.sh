@@ -47,6 +47,10 @@ IAlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 Alarm=$AOSPPath"frameworks/base/core/java/android/app/Alarm.java"
 AlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
+IAlarm=$AOSPPath"frameworks/base/core/java/android/app/Alarm.aidl"
+IAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+
+
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
 else
@@ -85,6 +89,22 @@ else
 	echo "Copy Android.mk..."
 	rm -f $AndroidMk
 	cp Android.mk $AndroidMkFolder
+fi
+
+if diff $Context Context.java >/dev/null ; then
+	echo "Context.java is same"
+else
+	echo "Copy Context.java..."
+	rm -f $Context
+	cp Context.java $ContextFolder
+fi
+
+if diff $ContextImpl ContextImpl.java >/dev/null ; then
+	echo "ContextImpl.java is same"
+else
+	echo "Copy ContextImpl.java..."
+	rm -f $ContextImpl
+	cp ContextImpl.java $ContextImplFolder
 fi
 
 if diff $PowerManager PowerManager.java >/dev/null ; then
@@ -151,10 +171,10 @@ else
 	cp Alarm.java $AlarmFolder
 fi
 
-if diff $Context Context.java >/dev/null ; then
-	echo "Context.java is same"
+if diff $IAlarm Alarm.aidl >/dev/null ; then
+	echo "Alarm.aidl is same"
 else
-	echo "Copy Context.java..."
-	rm -f $Context
-	cp Context.java $ContextFolder
+	echo "Copy Alarm.aidl..."
+	rm -f $IAlarm
+	cp Alarm.aidl $IAlarmFolder
 fi

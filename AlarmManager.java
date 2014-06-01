@@ -19,6 +19,7 @@ package android.app;
 import android.app.Alarm;
 import android.content.Intent;
 import android.os.RemoteException;
+import	java.util.List;
 
 /**
  * This class provides access to the system alarm services.  These allow you
@@ -304,7 +305,7 @@ public class AlarmManager
         }
     }
     
-    public ArrayList<Alarm> getAlarmList(int type) {
+    public List<Alarm> getAlarmList(int type) {
     	try {
             return mService.getAlarmList(type);
         } catch (RemoteException ex) {

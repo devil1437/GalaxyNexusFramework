@@ -2,10 +2,12 @@
 package android.app;
 
 import android.app.PendingIntent;
+import	android.util.TimeUtils;
 import android.os.Parcel;
 import android.os.Parcelable;
+import java.io.PrintWriter;
 
-public class Alarm implements 	 
+public class Alarm implements Parcelable
 {
         public int type;
         public int count;
@@ -13,7 +15,7 @@ public class Alarm implements
         public long repeatInterval;
         public PendingIntent operation;
         
-        public SourceObject(Parcel in) {
+        public Alarm(Parcel in) {
             readFromParcel(in);
         }
        
@@ -37,12 +39,12 @@ public class Alarm implements
             operation = (PendingIntent) in.readParcelable(PendingIntent.class.getClassLoader());
         }
 
-        public static final Parcelable.Creator<SourceObject> CREATOR = new Parcelable.Creator<SourceObject>() {
-            public SourceObject createFromParcel(Parcel in) {
-                return new SourceObject(in);
+        public static final Parcelable.Creator<Alarm> CREATOR = new Parcelable.Creator<Alarm>() {
+            public Alarm createFromParcel(Parcel in) {
+                return new Alarm(in);
             }
-            public SourceObject[] newArray(int size) {
-                return new SourceObject[size];
+            public Alarm[] newArray(int size) {
+                return new Alarm[size];
             }
         };
         
