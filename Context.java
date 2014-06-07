@@ -1820,7 +1820,7 @@ public abstract class Context {
      */
     public abstract Object getSystemService(String name);
 
-    public static final String RESOURCE_MANAGER_SERVICE = "multi-resource_manager";
+    public static final String RESOURCE_MANAGER_SERVICE = "resource_manager";
     
     /**
      * Use with {@link #getSystemService} to retrieve a

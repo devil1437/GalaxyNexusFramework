@@ -1,3 +1,3 @@
 package android.app;
 
-parcelable Alarm;
+parcelable MyAlarm;

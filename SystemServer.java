@@ -52,6 +52,7 @@ import com.android.internal.widget.LockSettingsService;
 import com.android.server.accessibility.AccessibilityManagerService;
 import com.android.server.am.ActivityManagerService;
 import com.android.server.am.BatteryStatsService;
+import com.android.server.MultiResourceManagerService;
 import com.android.server.display.DisplayManagerService;
 import com.android.server.dreams.DreamManagerService;
 import com.android.server.input.InputManagerService;
@@ -125,6 +126,7 @@ class ServerThread extends Thread {
         ContentService contentService = null;
         LightsService lights = null;
         PowerManagerService power = null;
+        MultiResourceManagerService multiResource = null;
         DisplayManagerService display = null;
         BatteryService battery = null;
         VibratorService vibrator = null;
@@ -210,16 +212,13 @@ class ServerThread extends Thread {
             Slog.i(TAG, "Entropy Mixer");
             ServiceManager.addService("entropy", new EntropyMixer());
 
-			Slog.i(TAG, "Multi-Resource Manager Service");
-            ServiceManager.addService(Context.RESOURCE_MANAGER_SERVICE, new MultiResourceManagerService());
-
             Slog.i(TAG, "Power Manager");
             power = new PowerManagerService();
             ServiceManager.addService(Context.POWER_SERVICE, power);
 
             Slog.i(TAG, "Activity Manager");
             context = ActivityManagerService.main(factoryTest);
-
+            
             Slog.i(TAG, "Display Manager");
             display = new DisplayManagerService(context, wmHandler, uiHandler);
             ServiceManager.addService(Context.DISPLAY_SERVICE, display, true);
@@ -359,6 +358,14 @@ class ServerThread extends Thread {
 
         // Bring up services needed for UI.
         if (factoryTest != SystemServer.FACTORY_TEST_LOW_LEVEL) {
+        	try {
+	        	Slog.i(TAG, "Multi-Resource Manager Service");
+	            multiResource = new MultiResourceManagerService(context);
+	            ServiceManager.addService(Context.RESOURCE_MANAGER_SERVICE, multiResource);
+        	} catch (Throwable e) {
+                reportWtf("starting Multi-Resource Manager Service", e);
+            }
+        	
             try {
                 Slog.i(TAG, "Input Method Service");
                 imm = new InputMethodManagerService(context, wm);

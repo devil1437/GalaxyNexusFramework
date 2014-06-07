@@ -7,7 +7,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import java.io.PrintWriter;
 
-public class Alarm implements Parcelable
+public class MyAlarm implements Parcelable
 {
         public int type;
         public int count;
@@ -15,7 +15,7 @@ public class Alarm implements Parcelable
         public long repeatInterval;
         public PendingIntent operation;
         
-        public Alarm(Parcel in) {
+        public MyAlarm(Parcel in) {
             readFromParcel(in);
         }
        
@@ -39,16 +39,16 @@ public class Alarm implements Parcelable
             operation = (PendingIntent) in.readParcelable(PendingIntent.class.getClassLoader());
         }
 
-        public static final Parcelable.Creator<Alarm> CREATOR = new Parcelable.Creator<Alarm>() {
-            public Alarm createFromParcel(Parcel in) {
-                return new Alarm(in);
+        public static final Parcelable.Creator<MyAlarm> CREATOR = new Parcelable.Creator<MyAlarm>() {
+            public MyAlarm createFromParcel(Parcel in) {
+                return new MyAlarm(in);
             }
-            public Alarm[] newArray(int size) {
-                return new Alarm[size];
+            public MyAlarm[] newArray(int size) {
+                return new MyAlarm[size];
             }
         };
         
-        public Alarm() {
+        public MyAlarm() {
             when = 0;
             repeatInterval = 0;
             operation = null;

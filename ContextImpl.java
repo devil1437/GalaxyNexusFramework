@@ -434,8 +434,8 @@ class ContextImpl extends Context {
                     return new NsdManager(ctx.getOuterContext(), service);
                 }});
 
-        registerService(RESOURCE_MANAGER_SERVICE, new ServiceFetcher() {
-            public Object createService(ContextImpl ctx) {
+        registerService(RESOURCE_MANAGER_SERVICE, new StaticServiceFetcher() {
+            public Object createStaticService() {
                 IBinder b = ServiceManager.getService(RESOURCE_MANAGER_SERVICE);
                 IMultiResourceManagerService service = IMultiResourceManagerService.Stub.asInterface(b);
                 return new MultiResourceManager(service);

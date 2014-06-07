@@ -16,7 +16,8 @@
 
 package android.app;
 
-import android.app.Alarm;
+import android.app.MyAlarm;
+import android.app.IAlarmManager;
 import android.content.Intent;
 import android.os.RemoteException;
 import	java.util.List;
@@ -305,9 +306,9 @@ public class AlarmManager
         }
     }
     
-    public List<Alarm> getAlarmList(int type) {
+    public List<MyAlarm> getAlarmList(int type) {
     	try {
-            return mService.getAlarmList(type);
+    		return mService.getAlarmList(type);
         } catch (RemoteException ex) {
         }
     	return null;

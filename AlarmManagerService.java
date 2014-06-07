@@ -16,7 +16,7 @@
 
 package com.android.server;
 
-import android.app.Alarm;
+import android.app.MyAlarm;
 import android.app.Activity;
 import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
@@ -29,7 +29,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.ServiceManager;
 import android.os.MultiResourceManager;
+import android.os.IMultiResourceManagerService;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -48,6 +50,7 @@ import android.util.TimeUtils;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -90,10 +93,10 @@ class AlarmManagerService extends IAlarmManager.Stub {
 
     private Object mLock = new Object();
     
-    private final ArrayList<Alarm> mRtcWakeupAlarms = new ArrayList<Alarm>();
-    private final ArrayList<Alarm> mRtcAlarms = new ArrayList<Alarm>();
-    private final ArrayList<Alarm> mElapsedRealtimeWakeupAlarms = new ArrayList<Alarm>();
-    private final ArrayList<Alarm> mElapsedRealtimeAlarms = new ArrayList<Alarm>();
+    private final ArrayList<MyAlarm> mRtcWakeupAlarms = new ArrayList<MyAlarm>();
+    private final ArrayList<MyAlarm> mRtcAlarms = new ArrayList<MyAlarm>();
+    private final ArrayList<MyAlarm> mElapsedRealtimeWakeupAlarms = new ArrayList<MyAlarm>();
+    private final ArrayList<MyAlarm> mElapsedRealtimeAlarms = new ArrayList<MyAlarm>();
     private final IncreasingTimeOrder mIncreasingTimeOrder = new IncreasingTimeOrder();
     
     private int mDescriptor;
@@ -222,11 +225,11 @@ class AlarmManagerService extends IAlarmManager.Stub {
             return;
         }
         synchronized (mLock) {
-            Alarm alarm = new Alarm();
-            alarm.type = type;
-            alarm.when = triggerAtTime;
-            alarm.repeatInterval = interval;
-            alarm.operation = operation;
+        	MyAlarm alarm = new MyAlarm();
+        	alarm.type = type;
+        	alarm.when = triggerAtTime;
+        	alarm.repeatInterval = interval;
+        	alarm.operation = operation;
 
             // Remove this alarm if already scheduled.
             removeLocked(operation);
@@ -348,17 +351,17 @@ class AlarmManagerService extends IAlarmManager.Stub {
         removeLocked(mElapsedRealtimeAlarms, operation);
     }
 
-    private void removeLocked(ArrayList<Alarm> alarmList,
+    private void removeLocked(ArrayList<MyAlarm> alarmList,
             PendingIntent operation) {
         if (alarmList.size() <= 0) {
             return;
         }
 
         // iterator over the list removing any it where the intent match
-        Iterator<Alarm> it = alarmList.iterator();
+        Iterator<MyAlarm> it = alarmList.iterator();
         
         while (it.hasNext()) {
-            Alarm alarm = it.next();
+        	MyAlarm alarm = it.next();
             if (alarm.operation.equals(operation)) {
                 it.remove();
             }
@@ -372,17 +375,17 @@ class AlarmManagerService extends IAlarmManager.Stub {
         removeLocked(mElapsedRealtimeAlarms, packageName);
     }
 
-    private void removeLocked(ArrayList<Alarm> alarmList,
+    private void removeLocked(ArrayList<MyAlarm> alarmList,
             String packageName) {
         if (alarmList.size() <= 0) {
             return;
         }
 
         // iterator over the list removing any it where the intent match
-        Iterator<Alarm> it = alarmList.iterator();
+        Iterator<MyAlarm> it = alarmList.iterator();
         
         while (it.hasNext()) {
-            Alarm alarm = it.next();
+        	MyAlarm alarm = it.next();
             if (alarm.operation.getTargetPackage().equals(packageName)) {
                 it.remove();
             }
@@ -396,16 +399,16 @@ class AlarmManagerService extends IAlarmManager.Stub {
         removeUserLocked(mElapsedRealtimeAlarms, userHandle);
     }
 
-    private void removeUserLocked(ArrayList<Alarm> alarmList, int userHandle) {
+    private void removeUserLocked(ArrayList<MyAlarm> alarmList, int userHandle) {
         if (alarmList.size() <= 0) {
             return;
         }
 
         // iterator over the list removing any it where the intent match
-        Iterator<Alarm> it = alarmList.iterator();
+        Iterator<MyAlarm> it = alarmList.iterator();
 
         while (it.hasNext()) {
-            Alarm alarm = it.next();
+        	MyAlarm alarm = it.next();
             if (UserHandle.getUserId(alarm.operation.getCreatorUid()) == userHandle) {
                 it.remove();
             }
@@ -419,7 +422,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 || lookForPackageLocked(mElapsedRealtimeAlarms, packageName);
     }
 
-    private boolean lookForPackageLocked(ArrayList<Alarm> alarmList, String packageName) {
+    private boolean lookForPackageLocked(ArrayList<MyAlarm> alarmList, String packageName) {
         for (int i=alarmList.size()-1; i>=0; i--) {
             if (alarmList.get(i).operation.getTargetPackage().equals(packageName)) {
                 return true;
@@ -428,7 +431,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         return false;
     }
     
-    public ArrayList<Alarm> getAlarmList(int type) {
+    public ArrayList<MyAlarm> getAlarmList(int type) {
         switch (type) {
             case AlarmManager.RTC_WAKEUP:              return mRtcWakeupAlarms;
             case AlarmManager.RTC:                     return mRtcAlarms;
@@ -439,8 +442,8 @@ class AlarmManagerService extends IAlarmManager.Stub {
         return null;
     }
     
-    private int addAlarmLocked(Alarm alarm) {
-        ArrayList<Alarm> alarmList = getAlarmList(alarm.type);
+    private int addAlarmLocked(MyAlarm alarm) {
+        ArrayList<MyAlarm> alarmList = getAlarmList(alarm.type);
         
         int index = Collections.binarySearch(alarmList, alarm, mIncreasingTimeOrder);
         if (index < 0) {
@@ -453,7 +456,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             // Display the list of alarms for this alarm type
             Slog.v(TAG, "alarms: " + alarmList.size() + " type: " + alarm.type);
             int position = 0;
-            for (Alarm a : alarmList) {
+            for (MyAlarm a : alarmList) {
                 Time time = new Time();
                 time.set(a.when);
                 String timeStr = time.format("%b %d %I:%M:%S %p");
@@ -471,9 +474,9 @@ class AlarmManagerService extends IAlarmManager.Stub {
         synchronized (mLock) {
             for (int i=AlarmManager.RTC_WAKEUP;
                     i<=AlarmManager.ELAPSED_REALTIME; i++) {
-                ArrayList<Alarm> alarmList = getAlarmList(i);
+                ArrayList<MyAlarm> alarmList = getAlarmList(i);
                 if (alarmList.size() > 0) {
-                    Alarm a = alarmList.get(0);
+                	MyAlarm a = alarmList.get(0);
                     if (a.when < nextAlarm) {
                         nextAlarm = a.when;
                     }
@@ -483,14 +486,22 @@ class AlarmManagerService extends IAlarmManager.Stub {
         return nextAlarm;
     }
     
-    private void setLocked(Alarm alarm)
+    private void setLocked(MyAlarm alarm)
     {
 	    if (mDescriptor != -1)
 	    {
 	    	if (mEnableResouceManager)
 	    	{
-	    		MultiResourceManager mrm = (MultiResourceManager)context.getSystemService(Context.RESOURCE_MANAGER_SERVICE);
-	    		long when = mrm.getWakeUpTime();
+	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+	    		// long when = mrm.getWakeUpTime(getAlarmList(AlarmManager.RTC_WAKEUP), getAlarmList(AlarmManager.RTC),
+	    		//		getAlarmList(AlarmManager.ELAPSED_REALTIME_WAKEUP), getAlarmList(AlarmManager.ELAPSED_REALTIME));
+	    		long when = 0;
+	    		try{
+	    			when = mrm.getWakeUpTime();
+	    		} catch(Exception e) {
+	    			e.printStackTrace();
+	    			return;
+	    		}
 	    		long alarmSeconds, alarmNanoseconds;
 	    		
 	    		if (alarm.when < 0) {
@@ -667,10 +678,10 @@ class AlarmManagerService extends IAlarmManager.Stub {
         }
     }
 
-    private static final void dumpAlarmList(PrintWriter pw, ArrayList<Alarm> list,
+    private static final void dumpAlarmList(PrintWriter pw, ArrayList<MyAlarm> list,
             String prefix, String label, long now) {
         for (int i=list.size()-1; i>=0; i--) {
-            Alarm a = list.get(i);
+        	MyAlarm a = list.get(i);
             pw.print(prefix); pw.print(label); pw.print(" #"); pw.print(i);
                     pw.print(": "); pw.println(a);
             a.dump(pw, prefix + "  ", now);
@@ -683,16 +694,16 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private native int waitForAlarm(int fd);
     private native int setKernelTimezone(int fd, int minuteswest);
 
-    private void triggerAlarmsLocked(ArrayList<Alarm> alarmList,
-                                     ArrayList<Alarm> triggerList,
+    private void triggerAlarmsLocked(ArrayList<MyAlarm> alarmList,
+                                     ArrayList<MyAlarm> triggerList,
                                      long now)
     {
-        Iterator<Alarm> it = alarmList.iterator();
-        ArrayList<Alarm> repeats = new ArrayList<Alarm>();
+        Iterator<MyAlarm> it = alarmList.iterator();
+        ArrayList<MyAlarm> repeats = new ArrayList<MyAlarm>();
         
         while (it.hasNext())
         {
-            Alarm alarm = it.next();
+        	MyAlarm alarm = it.next();
 
             if (localLOGV) Slog.v(TAG, "Checking active alarm when=" + alarm.when + " " + alarm);
 
@@ -734,7 +745,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         // reset any repeating alarms.
         it = repeats.iterator();
         while (it.hasNext()) {
-            Alarm alarm = it.next();
+        	MyAlarm alarm = it.next();
             alarm.when += alarm.count * alarm.repeatInterval;
             addAlarmLocked(alarm);
         }
@@ -747,8 +758,8 @@ class AlarmManagerService extends IAlarmManager.Stub {
     /**
      * This Comparator sorts Alarms into increasing time order.
      */
-    public static class IncreasingTimeOrder implements Comparator<Alarm> {
-        public int compare(Alarm a1, Alarm a2) {
+    public static class IncreasingTimeOrder implements Comparator<MyAlarm> {
+        public int compare(MyAlarm a1, MyAlarm a2) {
             long when1 = a1.when;
             long when2 = a2.when;
             if (when1 - when2 > 0) {
@@ -774,7 +785,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             {
                 int result = waitForAlarm(mDescriptor);
                 
-                ArrayList<Alarm> triggerList = new ArrayList<Alarm>();
+                ArrayList<MyAlarm> triggerList = new ArrayList<MyAlarm>();
                 
                 if ((result & TIME_CHANGED_MASK) != 0) {
                     remove(mTimeTickSender);
@@ -805,9 +816,9 @@ class AlarmManagerService extends IAlarmManager.Stub {
                         triggerAlarmsLocked(mElapsedRealtimeAlarms, triggerList, nowELAPSED);
                     
                     // now trigger the alarms
-                    Iterator<Alarm> it = triggerList.iterator();
+                    Iterator<MyAlarm> it = triggerList.iterator();
                     while (it.hasNext()) {
-                        Alarm alarm = it.next();
+                    	MyAlarm alarm = it.next();
                         try {
                             if (localLOGV) Slog.v(TAG, "sending alarm " + alarm);
                             alarm.operation.send(mContext, 0,
@@ -904,7 +915,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         
         public void handleMessage(Message msg) {
             if (msg.what == ALARM_EVENT) {
-                ArrayList<Alarm> triggerList = new ArrayList<Alarm>();
+                ArrayList<MyAlarm> triggerList = new ArrayList<MyAlarm>();
                 synchronized (mLock) {
                     final long nowRTC = System.currentTimeMillis();
                     triggerAlarmsLocked(mRtcWakeupAlarms, triggerList, nowRTC);
@@ -914,10 +925,10 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 }
                 
                 // now trigger the alarms without the lock held
-                Iterator<Alarm> it = triggerList.iterator();
+                Iterator<MyAlarm> it = triggerList.iterator();
                 while (it.hasNext())
                 {
-                    Alarm alarm = it.next();
+                	MyAlarm alarm = it.next();
                     try {
                         alarm.operation.send();
                     } catch (PendingIntent.CanceledException e) {

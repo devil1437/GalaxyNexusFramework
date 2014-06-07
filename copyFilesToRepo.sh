@@ -44,11 +44,11 @@ AlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 IAlarmManager=$AOSPPath"frameworks/base/core/java/android/app/IAlarmManager.aidl"
 IAlarmManagerFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
-Alarm=$AOSPPath"frameworks/base/core/java/android/app/Alarm.java"
-AlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+MyAlarm=$AOSPPath"frameworks/base/core/java/android/app/MyAlarm.java"
+MyAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
-IAlarm=$AOSPPath"frameworks/base/core/java/android/app/Alarm.aidl"
-IAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+IMyAlarm=$AOSPPath"frameworks/base/core/java/android/app/MyAlarm.aidl"
+IMyAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
 
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
@@ -163,18 +163,18 @@ else
 	cp IAlarmManager.aidl $IAlarmManagerFolder
 fi
 
-if diff $Alarm Alarm.java >/dev/null ; then
-	echo "Alarm.java is same"
+if diff $MyAlarm MyAlarm.java >/dev/null ; then
+	echo "MyAlarm.java is same"
 else
-	echo "Copy Alarm.java..."
-	rm -f $Alarm
-	cp Alarm.java $AlarmFolder
+	echo "Copy MyAlarm.java..."
+	rm -f $MyAlarm
+	cp MyAlarm.java $MyAlarmFolder
 fi
 
-if diff $IAlarm Alarm.aidl >/dev/null ; then
-	echo "Alarm.aidl is same"
+if diff $IMyAlarm MyAlarm.aidl >/dev/null ; then
+	echo "MyAlarm.aidl is same"
 else
-	echo "Copy Alarm.aidl..."
-	rm -f $IAlarm
-	cp Alarm.aidl $IAlarmFolder
+	echo "Copy MyAlarm.aidl..."
+	rm -f $IMyAlarm
+	cp MyAlarm.aidl $IMyAlarmFolder
 fi
