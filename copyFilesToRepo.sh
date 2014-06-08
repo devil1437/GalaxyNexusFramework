@@ -35,6 +35,9 @@ DisplayPowerControllerFolder=$AOSPPath"frameworks/base/services/java/com/android
 NotificationManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/NotificationManagerService.java"
 NotificationManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
+Notification=$AOSPPath"frameworks/base/core/java/android/app/Notification.java"
+NotificationFolder=$AOSPPath"frameworks/base/core/java/android/app/"
+
 AlarmManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/AlarmManagerService.java"
 AlarmManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/"
 
@@ -137,6 +140,14 @@ else
 	echo "Copy NotificationManagerService.java..."
 	rm -f $NotificationManagerService
 	cp NotificationManagerService.java $NotificationManagerServiceFolder
+fi
+
+if diff $Notification Notification.java >/dev/null ; then
+	echo "Notification.java is same"
+else
+	echo "Copy Notification.java..."
+	rm -f $Notification
+	cp Notification.java $NotificationFolder
 fi
 
 if diff $AlarmManagerService AlarmManagerService.java >/dev/null ; then
