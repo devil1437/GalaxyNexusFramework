@@ -47,6 +47,8 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.MultiResourceManager;
+import android.os.IMultiResourceManagerService;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -169,6 +171,8 @@ public class NotificationManagerService extends INotificationManager.Stub
     private static final String TAG_PACKAGE = "package";
     private static final String ATTR_NAME = "name";
 
+    private boolean mEnableResouceManager = true;
+    
     private void loadBlockDb() {
         synchronized(mBlockedPackages) {
             if (mPolicyFile == null) {
@@ -982,7 +986,21 @@ public class NotificationManagerService extends INotificationManager.Stub
         // 2. Consult external heuristics (TBD)
 
         // 3. Apply local rules
-
+        if (mEnableResouceManager)
+    	{
+    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+    		
+    		try{
+	    		if(!mrm.isServe(pkg, tag, id, callingUid, callingPid, userId,
+	                    score, notification)){
+	    			score = JUNK_SCORE;
+	    		}
+    		} catch(Exception e){
+    			e.printStackTrace();
+    			return;
+    		}
+    	}
+        
         // blocked apps
         if (ENABLE_BLOCKED_NOTIFICATIONS && !isSystemNotification && !areNotificationsEnabledForPackageInt(pkg)) {
             score = JUNK_SCORE;

@@ -28,6 +28,7 @@ class MultiResourceManagerService extends IMultiResourceManagerService.Stub
             Log.i(TAG,"MultiResourceManagerService is constructed!");
         }
 
+        // For Alarm Manager
         public long getWakeUpTime(){
         	Log.i(TAG,"getWakeUpTime()");
 
@@ -40,5 +41,22 @@ class MultiResourceManagerService extends IMultiResourceManagerService.Stub
         	}
         	
         	return 0;
+        }
+        
+        // For Alarm Manager
+        public boolean isServe(MyAlarm alarm, long now){
+        	Log.i(TAG,"isServe()");
+        	if (alarm.when > now) {
+                return false;
+            }
+        	else{
+        		return true;
+        	}
+        }
+        
+        // For Notification Manager
+        public boolean isServe(String pkg, String tag, int id, int callingUid, 
+        		int callingPid, int userId, int score, Notification notification){
+        	return true;
         }
 }
