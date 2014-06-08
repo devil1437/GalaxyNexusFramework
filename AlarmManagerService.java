@@ -493,8 +493,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
 	    	if (mEnableResouceManager)
 	    	{
 	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
-	    		// long when = mrm.getWakeUpTime(getAlarmList(AlarmManager.RTC_WAKEUP), getAlarmList(AlarmManager.RTC),
-	    		//		getAlarmList(AlarmManager.ELAPSED_REALTIME_WAKEUP), getAlarmList(AlarmManager.ELAPSED_REALTIME));
+	    		
 	    		long when = 0;
 	    		try{
 	    			when = mrm.getWakeUpTime();
@@ -502,6 +501,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
 	    			e.printStackTrace();
 	    			return;
 	    		}
+	    		
 	    		long alarmSeconds, alarmNanoseconds;
 	    		
 	    		if (alarm.when < 0) {
@@ -707,39 +707,54 @@ class AlarmManagerService extends IAlarmManager.Stub {
 
             if (localLOGV) Slog.v(TAG, "Checking active alarm when=" + alarm.when + " " + alarm);
 
-            if (alarm.when > now) {
-                // don't fire alarms in the future
-                break;
+            if (mEnableResouceManager)
+	    	{
+	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+	    		
+	    		try{
+		    		if(!mrm.isServe(alarm, now)){
+		    			continue;
+		    		}
+	    		} catch(Exception e){
+	    			e.printStackTrace();
+	    			return;
+	    		}
+	    	}
+            else {
+	            if (alarm.when > now) {
+	                // don't fire alarms in the future
+	                break;
+	            }
             }
+	        // If the alarm is late, then print a warning message.
+	        // Note that this can happen if the user creates a new event on
+	        // the Calendar app with a reminder that is in the past. In that
+	        // case, the reminder alarm will fire immediately.
+	        if (localLOGV && now - alarm.when > LATE_ALARM_THRESHOLD) {
+	            Slog.v(TAG, "alarm is late! alarm time: " + alarm.when
+	                    + " now: " + now + " delay (in seconds): "
+	                    + (now - alarm.when) / 1000);
+	        }
+	
+	        // Recurring alarms may have passed several alarm intervals while the
+	        // phone was asleep or off, so pass a trigger count when sending them.
+	        if (localLOGV) Slog.v(TAG, "Alarm triggering: " + alarm);
+	        alarm.count = 1;
+	        if (alarm.repeatInterval > 0) {
+	            // this adjustment will be zero if we're late by
+	            // less than one full repeat interval
+	            alarm.count += (now - alarm.when) / alarm.repeatInterval;
+	        }
+	        triggerList.add(alarm);
+	            
+	        // remove the alarm from the list
+	        it.remove();
+	            
+	        // if it repeats queue it up to be read-added to the list
+	        if (alarm.repeatInterval > 0) {
+	            repeats.add(alarm);
+	        }
             
-            // If the alarm is late, then print a warning message.
-            // Note that this can happen if the user creates a new event on
-            // the Calendar app with a reminder that is in the past. In that
-            // case, the reminder alarm will fire immediately.
-            if (localLOGV && now - alarm.when > LATE_ALARM_THRESHOLD) {
-                Slog.v(TAG, "alarm is late! alarm time: " + alarm.when
-                        + " now: " + now + " delay (in seconds): "
-                        + (now - alarm.when) / 1000);
-            }
-
-            // Recurring alarms may have passed several alarm intervals while the
-            // phone was asleep or off, so pass a trigger count when sending them.
-            if (localLOGV) Slog.v(TAG, "Alarm triggering: " + alarm);
-            alarm.count = 1;
-            if (alarm.repeatInterval > 0) {
-                // this adjustment will be zero if we're late by
-                // less than one full repeat interval
-                alarm.count += (now - alarm.when) / alarm.repeatInterval;
-            }
-            triggerList.add(alarm);
-            
-            // remove the alarm from the list
-            it.remove();
-            
-            // if it repeats queue it up to be read-added to the list
-            if (alarm.repeatInterval > 0) {
-                repeats.add(alarm);
-            }
         }
 
         // reset any repeating alarms.
