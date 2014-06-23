@@ -712,7 +712,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
 	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
 	    		
 	    		try{
-		    		if(!mrm.isServe(alarm, now)){
+		    		if(!mrm.isServeAlarm(alarm, now)){
 		    			continue;
 		    		}
 	    		} catch(Exception e){

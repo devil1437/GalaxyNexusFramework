@@ -923,9 +923,107 @@ public class NotificationManagerService extends INotificationManager.Stub
         if (DBG) {
             Slog.v(TAG, "enqueueNotificationInternal: pkg=" + pkg + " id=" + id + " notification=" + notification);
         }
+        
+        if(notification.isBuffered){
+        	if (((mDisabledNotifications & StatusBarManager.DISABLE_NOTIFICATION_ALERTS) == 0)
+                    && (!((notification.flags & Notification.FLAG_ONLY_ALERT_ONCE) != 0 ))
+                    && mSystemReady) {
+
+                final AudioManager audioManager = (AudioManager) mContext
+                .getSystemService(Context.AUDIO_SERVICE);
+
+                // sound
+                final boolean useDefaultSound =
+                    (notification.defaults & Notification.DEFAULT_SOUND) != 0;
+
+                Uri soundUri = null;
+                boolean hasValidSound = false;
+
+                if (useDefaultSound) {
+                    soundUri = Settings.System.DEFAULT_NOTIFICATION_URI;
+
+                    // check to see if the default notification sound is silent
+                    ContentResolver resolver = mContext.getContentResolver();
+                    hasValidSound = Settings.System.getString(resolver,
+                           Settings.System.NOTIFICATION_SOUND) != null;
+                } else if (notification.sound != null) {
+                    soundUri = notification.sound;
+                    hasValidSound = (soundUri != null);
+                }
+
+                if (hasValidSound) {
+                    boolean looping = (notification.flags & Notification.FLAG_INSISTENT) != 0;
+                    int audioStreamType;
+                    if (notification.audioStreamType >= 0) {
+                        audioStreamType = notification.audioStreamType;
+                    } else {
+                        audioStreamType = DEFAULT_STREAM_TYPE;
+                    }
+                    //mSoundNotification = r;
+                    // do not play notifications if stream volume is 0
+                    // (typically because ringer mode is silent) or if speech recognition is active.
+                    if ((audioManager.getStreamVolume(audioStreamType) != 0)
+                            && !audioManager.isSpeechRecognitionActive()) {
+                        final long identity = Binder.clearCallingIdentity();
+                        try {
+                            final IRingtonePlayer player = mAudioService.getRingtonePlayer();
+                            if (player != null) {
+                            	userId = ActivityManager.handleIncomingUser(callingPid,
+                                        callingUid, userId, true, false, "enqueueNotification", pkg);
+                                final UserHandle user = new UserHandle(userId);
+                                player.playAsync(soundUri, user, looping, audioStreamType);
+                            }
+                        } catch (RemoteException e) {
+                        } finally {
+                            Binder.restoreCallingIdentity(identity);
+                        }
+                    }
+                }
+
+                // vibrate
+                // Does the notification want to specify its own vibration?
+                final boolean hasCustomVibrate = notification.vibrate != null;
+
+                // new in 4.2: if there was supposed to be a sound and we're in vibrate mode,
+                // and no other vibration is specified, we fall back to vibration
+                final boolean convertSoundToVibration =
+                           !hasCustomVibrate
+                        && hasValidSound
+                        && (audioManager.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE);
+
+                // The DEFAULT_VIBRATE flag trumps any custom vibration AND the fallback.
+                final boolean useDefaultVibrate =
+                        (notification.defaults & Notification.DEFAULT_VIBRATE) != 0;
+
+                if ((useDefaultVibrate || convertSoundToVibration || hasCustomVibrate)
+                        && !(audioManager.getRingerMode() == AudioManager.RINGER_MODE_SILENT)) {
+                    //mVibrateNotification = r;
+
+                    if (useDefaultVibrate || convertSoundToVibration) {
+                        // Escalate privileges so we can use the vibrator even if the notifying app
+                        // does not have the VIBRATE permission.
+                        long identity = Binder.clearCallingIdentity();
+                        try {
+	                        mVibrator.vibrate(useDefaultVibrate ? mDefaultVibrationPattern
+	                                                            : mFallbackVibrationPattern,
+	                            ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                        } finally {
+                            Binder.restoreCallingIdentity(identity);
+                        }
+                    } else if (notification.vibrate.length > 1) {
+                        // If you want your own vibration pattern, you need the VIBRATE permission
+	                    mVibrator.vibrate(notification.vibrate,
+	                        ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                    }
+                }
+            }
+        	return;
+        }
+        
         checkCallerIsSystemOrSameApp(pkg);
         final boolean isSystemNotification = ("android".equals(pkg));
-
+        boolean isBuffered = false;
+        
         userId = ActivityManager.handleIncomingUser(callingPid,
                 callingUid, userId, true, false, "enqueueNotification", pkg);
         final UserHandle user = new UserHandle(userId);
@@ -986,21 +1084,18 @@ public class NotificationManagerService extends INotificationManager.Stub
         // 2. Consult external heuristics (TBD)
 
         // 3. Apply local rules
-        if (mEnableResouceManager)
-    	{
-    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
-    		
-    		try{
-	    		if(!mrm.isServe(pkg, tag, id, callingUid, callingPid, userId,
-	                    score, notification)){
-	    			score = JUNK_SCORE;
-	    		}
-    		} catch(Exception e){
-    			e.printStackTrace();
-    			return;
+        IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+		
+		try{
+    		if(!notification.isBuffered && !mrm.isServeNotification(pkg, tag, id, callingUid, callingPid, userId,
+                    score, notification)){
+    			isBuffered = true;
     		}
-    	}
-        
+		} catch(Exception e){
+			e.printStackTrace();
+			return;
+		}
+		
         // blocked apps
         if (ENABLE_BLOCKED_NOTIFICATIONS && !isSystemNotification && !areNotificationsEnabledForPackageInt(pkg)) {
             score = JUNK_SCORE;
@@ -1145,7 +1240,7 @@ public class NotificationManagerService extends INotificationManager.Stub
                         final long identity = Binder.clearCallingIdentity();
                         try {
                             final IRingtonePlayer player = mAudioService.getRingtonePlayer();
-                            if (player != null) {
+                            if (player != null && !isBuffered) {
                                 player.playAsync(soundUri, user, looping, audioStreamType);
                             }
                         } catch (RemoteException e) {
@@ -1179,16 +1274,20 @@ public class NotificationManagerService extends INotificationManager.Stub
                         // does not have the VIBRATE permission.
                         long identity = Binder.clearCallingIdentity();
                         try {
-                            mVibrator.vibrate(useDefaultVibrate ? mDefaultVibrationPattern
-                                                                : mFallbackVibrationPattern,
-                                ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                        	if(!isBuffered){
+	                            mVibrator.vibrate(useDefaultVibrate ? mDefaultVibrationPattern
+	                                                                : mFallbackVibrationPattern,
+	                                ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                        	}
                         } finally {
                             Binder.restoreCallingIdentity(identity);
                         }
                     } else if (notification.vibrate.length > 1) {
                         // If you want your own vibration pattern, you need the VIBRATE permission
-                        mVibrator.vibrate(notification.vibrate,
-                            ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                    	if(!isBuffered){
+	                        mVibrator.vibrate(notification.vibrate,
+	                            ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+                    	}
                     }
                 }
             }

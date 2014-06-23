@@ -439,6 +439,10 @@ public class Notification implements Parcelable
 
     private Bundle extras;
 
+    public boolean isBuffered = false;
+    
+    public int bufferedUid = 1000;
+    
     /**
      * Structure to encapsulate an "action", including title and icon, that can be attached to a Notification.
      * @hide
@@ -545,58 +549,7 @@ public class Notification implements Parcelable
      */
     public Notification(Parcel parcel)
     {
-        int version = parcel.readInt();
-
-        when = parcel.readLong();
-        icon = parcel.readInt();
-        number = parcel.readInt();
-        if (parcel.readInt() != 0) {
-            contentIntent = PendingIntent.CREATOR.createFromParcel(parcel);
-        }
-        if (parcel.readInt() != 0) {
-            deleteIntent = PendingIntent.CREATOR.createFromParcel(parcel);
-        }
-        if (parcel.readInt() != 0) {
-            tickerText = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(parcel);
-        }
-        if (parcel.readInt() != 0) {
-            tickerView = RemoteViews.CREATOR.createFromParcel(parcel);
-        }
-        if (parcel.readInt() != 0) {
-            contentView = RemoteViews.CREATOR.createFromParcel(parcel);
-        }
-        if (parcel.readInt() != 0) {
-            largeIcon = Bitmap.CREATOR.createFromParcel(parcel);
-        }
-        defaults = parcel.readInt();
-        flags = parcel.readInt();
-        if (parcel.readInt() != 0) {
-            sound = Uri.CREATOR.createFromParcel(parcel);
-        }
-
-        audioStreamType = parcel.readInt();
-        vibrate = parcel.createLongArray();
-        ledARGB = parcel.readInt();
-        ledOnMS = parcel.readInt();
-        ledOffMS = parcel.readInt();
-        iconLevel = parcel.readInt();
-
-        if (parcel.readInt() != 0) {
-            fullScreenIntent = PendingIntent.CREATOR.createFromParcel(parcel);
-        }
-
-        priority = parcel.readInt();
-
-        kind = parcel.createStringArray(); // may set kind to null
-
-        if (parcel.readInt() != 0) {
-            extras = parcel.readBundle();
-        }
-
-        actions = parcel.createTypedArray(Action.CREATOR);
-        if (parcel.readInt() != 0) {
-            bigContentView = RemoteViews.CREATOR.createFromParcel(parcel);
-        }
+    	readFromParcel(parcel);
     }
 
     @Override
@@ -656,6 +609,9 @@ public class Notification implements Parcelable
 
         }
 
+        that.isBuffered = this.isBuffered;
+        that.bufferedUid = this.bufferedUid;
+        
         that.actions = new Action[this.actions.length];
         for(int i=0; i<this.actions.length; i++) {
             that.actions[i] = this.actions[i].clone();
@@ -671,6 +627,64 @@ public class Notification implements Parcelable
         return 0;
     }
 
+    public void readFromParcel(Parcel parcel) {
+    	int version = parcel.readInt();
+
+        when = parcel.readLong();
+        icon = parcel.readInt();
+        number = parcel.readInt();
+        if (parcel.readInt() != 0) {
+            contentIntent = PendingIntent.CREATOR.createFromParcel(parcel);
+        }
+        if (parcel.readInt() != 0) {
+            deleteIntent = PendingIntent.CREATOR.createFromParcel(parcel);
+        }
+        if (parcel.readInt() != 0) {
+            tickerText = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(parcel);
+        }
+        if (parcel.readInt() != 0) {
+            tickerView = RemoteViews.CREATOR.createFromParcel(parcel);
+        }
+        if (parcel.readInt() != 0) {
+            contentView = RemoteViews.CREATOR.createFromParcel(parcel);
+        }
+        if (parcel.readInt() != 0) {
+            largeIcon = Bitmap.CREATOR.createFromParcel(parcel);
+        }
+        defaults = parcel.readInt();
+        flags = parcel.readInt();
+        if (parcel.readInt() != 0) {
+            sound = Uri.CREATOR.createFromParcel(parcel);
+        }
+
+        audioStreamType = parcel.readInt();
+        vibrate = parcel.createLongArray();
+        ledARGB = parcel.readInt();
+        ledOnMS = parcel.readInt();
+        ledOffMS = parcel.readInt();
+        iconLevel = parcel.readInt();
+
+        if (parcel.readInt() != 0) {
+            fullScreenIntent = PendingIntent.CREATOR.createFromParcel(parcel);
+        }
+
+        priority = parcel.readInt();
+
+        kind = parcel.createStringArray(); // may set kind to null
+
+        if (parcel.readInt() != 0) {
+            extras = parcel.readBundle();
+        }
+
+        isBuffered = parcel.readByte() != 0;
+        bufferedUid = parcel.readInt();
+        
+        actions = parcel.createTypedArray(Action.CREATOR);
+        if (parcel.readInt() != 0) {
+            bigContentView = RemoteViews.CREATOR.createFromParcel(parcel);
+        }
+    }
+    
     /**
      * Flatten this notification from a parcel.
      */
@@ -752,6 +766,9 @@ public class Notification implements Parcelable
             parcel.writeInt(0);
         }
 
+        parcel.writeByte((byte) (isBuffered ? 1 : 0));
+        parcel.writeInt(bufferedUid);
+        
         parcel.writeTypedArray(actions, 0);
 
         if (bigContentView != null) {

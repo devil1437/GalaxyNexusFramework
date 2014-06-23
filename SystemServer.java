@@ -358,14 +358,6 @@ class ServerThread extends Thread {
 
         // Bring up services needed for UI.
         if (factoryTest != SystemServer.FACTORY_TEST_LOW_LEVEL) {
-        	try {
-	        	Slog.i(TAG, "Multi-Resource Manager Service");
-	            multiResource = new MultiResourceManagerService(context);
-	            ServiceManager.addService(Context.RESOURCE_MANAGER_SERVICE, multiResource);
-        	} catch (Throwable e) {
-                reportWtf("starting Multi-Resource Manager Service", e);
-            }
-        	
             try {
                 Slog.i(TAG, "Input Method Service");
                 imm = new InputMethodManagerService(context, wm);
@@ -757,6 +749,14 @@ class ServerThread extends Thread {
                 } catch (Throwable e) {
                     reportWtf("starting DreamManagerService", e);
                 }
+            }
+            
+            try {
+	        	Slog.i(TAG, "Multi-Resource Manager Service");
+	            multiResource = new MultiResourceManagerService(context);
+	            ServiceManager.addService(Context.RESOURCE_MANAGER_SERVICE, multiResource);
+        	} catch (Throwable e) {
+                reportWtf("starting Multi-Resource Manager Service", e);
             }
         }
 
