@@ -44,6 +44,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.IPowerManager;
+import android.os.IMultiResourceManagerService;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
@@ -51,6 +52,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.SystemService;
+import android.os.ServiceManager;
 import android.os.UserHandle;
 import android.os.WorkSource;
 import android.provider.Settings;
@@ -593,12 +595,29 @@ public final class PowerManagerService extends IPowerManager.Stub
                         + ", flags=0x" + Integer.toHexString(flags)
                         + ", tag=\"" + tag + "\", ws=" + ws + ", uid=" + uid + ", pid=" + pid);
             }
-			if ((flags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0) {
+            
+            Slog.d(TAG, "acquireWakeLockInternal: lock=" + Objects.hashCode(lock)
+                    + ", flags=0x" + Integer.toHexString(flags)
+                    + ", tag=\"" + tag + "\", ws=" + ws + ", uid=" + uid + ", pid=" + pid);
+            
+            // This is a dirty hack to check if the wake lock is acquired by multi-resource manager or not.
+			if ((flags & PowerManager.ACQUIRE_CAUSES_WAKEUP) != 0 && !tag.equals("MultiResourceManagerService")) {
                 StringBuffer sb = new StringBuffer(128);
     			sb.append("Time ");
     			sb.append(System.currentTimeMillis()/1000);
     			sb.append(" MyLogcat MyPowerManager Wakelock ACQUIRE_CAUSES_WAKEUP");
                 Slog.i(TAG, sb.toString());
+                
+                IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+        		
+        		try{
+            		if(!mrm.isServeWakeLock(flags, tag, ws, uid, pid)){
+            			flags &= ~PowerManager.ACQUIRE_CAUSES_WAKEUP;
+            		}
+        		} catch(Exception e){
+        			e.printStackTrace();
+        			return;
+        		}
             }		
 
             WakeLock wakeLock;
@@ -907,6 +926,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     }
 
     private void wakeUpInternal(long eventTime) {
+    	Slog.i(TAG, "MyLogcat wakeUpInternal(). eventTime: " + eventTime);
         synchronized (mLock) {
             if (wakeUpNoUpdateLocked(eventTime)) {
                 updatePowerStateLocked();
@@ -970,6 +990,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     }
 
     private void goToSleepInternal(long eventTime, int reason) {
+    	Slog.i(TAG, "MyLogcat goToSleepInternal(). eventTime: " + eventTime);
         synchronized (mLock) {
             if (goToSleepNoUpdateLocked(eventTime, reason)) {
                 updatePowerStateLocked();

@@ -14,18 +14,6 @@ public class MultiResourceManager {
 	}
 	
 	public long getWakeUpTime(){
-		try{
-			if(mService != null){
-				Log.i(TAG, "Try to call the getWakeUpTime()");
-				return mService.getWakeUpTime();
-			}
-			else{
-				Log.i(TAG, "Service is null..");
-				return -1;
-			}
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			return 0;
-		}
+		return 0;
 	}
 }

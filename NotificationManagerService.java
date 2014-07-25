@@ -1242,6 +1242,12 @@ public class NotificationManagerService extends INotificationManager.Stub
                             final IRingtonePlayer player = mAudioService.getRingtonePlayer();
                             if (player != null && !isBuffered) {
                                 player.playAsync(soundUri, user, looping, audioStreamType);
+                                try{
+                                	mrm.grant(callingUid, MultiResourceManagerService.HARDWARE_SOUND);
+                        		} catch(Exception e){
+                        			e.printStackTrace();
+                        			return;
+                        		}
                             }
                         } catch (RemoteException e) {
                         } finally {
@@ -1278,6 +1284,13 @@ public class NotificationManagerService extends INotificationManager.Stub
 	                            mVibrator.vibrate(useDefaultVibrate ? mDefaultVibrationPattern
 	                                                                : mFallbackVibrationPattern,
 	                                ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+	                            
+	                            try{
+                                	mrm.grant(callingUid, MultiResourceManagerService.HARDWARE_VIBRATION);
+                        		} catch(Exception e){
+                        			e.printStackTrace();
+                        			return;
+                        		}
                         	}
                         } finally {
                             Binder.restoreCallingIdentity(identity);
@@ -1287,6 +1300,13 @@ public class NotificationManagerService extends INotificationManager.Stub
                     	if(!isBuffered){
 	                        mVibrator.vibrate(notification.vibrate,
 	                            ((notification.flags & Notification.FLAG_INSISTENT) != 0) ? 0: -1);
+	                        
+	                        try{
+                            	mrm.grant(callingUid, MultiResourceManagerService.HARDWARE_VIBRATION);
+                    		} catch(Exception e){
+                    			e.printStackTrace();
+                    			return;
+                    		}
                     	}
                     }
                 }

@@ -27,7 +27,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.ServiceManager;
 import android.os.MultiResourceManager;
@@ -47,8 +49,12 @@ import android.util.Pair;
 import android.util.Slog;
 import android.util.TimeUtils;
 
+import java.io.BufferedReader;
 import java.io.FileDescriptor;
+import java.io.FileReader;
 import java.io.PrintWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
@@ -88,6 +94,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             = new Intent().addFlags(Intent.FLAG_FROM_BACKGROUND);
     
     private final Context mContext;
+    private static Context mMyContext;
 
     private final LocalLog mLog = new LocalLog(TAG);
 
@@ -112,6 +119,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private final PendingIntent mDateChangeSender;
 
     private final boolean mEnableResouceManager = true;
+    private Calendar mLastDate;
     
     private static final class InFlight extends Intent {
         final PendingIntent mPendingIntent;
@@ -135,19 +143,184 @@ class AlarmManagerService extends IAlarmManager.Stub {
         }
     }
 
+    private static String rtc2Str(long time){
+    	SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss");
+        Calendar cal = Calendar.getInstance();
+        
+        cal.setTimeInMillis(time);
+        return dateFormat.format(cal.getTime());
+    }
+    
+    private static class WakeUpRecord{
+    	long mStartTime;
+    	long mDuration;
+    	long mDelay;
+    	int mNetworkStat;
+    	int mVibrationStat;
+    	int mSoundStat;
+    	int mScreenStat;
+    	int mGpsStat;
+    	long mLastFocus;
+    	
+    	WakeUpRecord(long startTime, long duration, long delay, int networkStat, int vibrationStat, int soundStat, int screenStat, int gpsStat, long lastFocus){
+    		mStartTime = startTime;
+    		mDuration = duration;
+    		mDelay = delay;
+    		mNetworkStat = networkStat;
+    		mVibrationStat = vibrationStat;
+    		mSoundStat = soundStat;
+    		mScreenStat = screenStat;
+    		mGpsStat = gpsStat;
+    		mLastFocus = lastFocus;
+    	}
+    	
+    	public String toString(){
+    		StringBuffer sb = new StringBuffer(128);
+
+        	sb.append(mStartTime);
+        	
+        	sb.append(" ");
+        	sb.append(mDuration);
+        	
+        	sb.append(" ");
+        	sb.append(mDelay);
+        	
+        	sb.append(" ");
+        	sb.append(mNetworkStat);
+        	
+        	sb.append(" ");
+        	sb.append(mVibrationStat);
+        	
+        	sb.append(" ");
+        	sb.append(mSoundStat);
+        	
+        	sb.append(" ");
+        	sb.append(mScreenStat);
+        	
+        	sb.append(" ");
+        	sb.append(mGpsStat);
+        	
+        	sb.append(" ");
+        	sb.append(mLastFocus);
+        	
+        	return sb.toString();
+    	}
+    }
+    
     private static final class FilterStats {
         final BroadcastStats mBroadcastStats;
         final Pair<String, ComponentName> mTarget;
-
+        
         long aggregateTime;
         int count;
         int numWakeup;
         long startTime;
         int nesting;
+        int tcpReceive;
+        int tcpSend;
+        long startRtc;
+        long delay;
+        ArrayList<WakeUpRecord> records;
 
         FilterStats(BroadcastStats broadcastStats, Pair<String, ComponentName> target) {
             mBroadcastStats = broadcastStats;
             mTarget = target;
+            records = new ArrayList<WakeUpRecord>();
+        }
+        
+        private int getUidFromPackage(String packageName){
+        	try {
+                PackageManager pm = mMyContext.getPackageManager();
+                ApplicationInfo ai = pm.getApplicationInfo(packageName, PackageManager.GET_ACTIVITIES);
+                return ai.uid;
+            } catch (NameNotFoundException e) {
+                e.printStackTrace();
+            }
+        	
+        	return -1;
+        }
+        
+        private String readProc(String path){
+        	String procPath = ("/proc/");
+        	
+        	procPath += path;
+        	
+        	try {
+        	    BufferedReader mounts = new BufferedReader(new FileReader(procPath));
+        	    String line, content = new String();
+        	    
+        	    while ((line = mounts.readLine()) != null) {
+        	    	content += line;
+        	    }
+        	    
+        	    mounts.close();
+        	    return content;
+        	}
+        	catch (FileNotFoundException e) {
+        	    Slog.d(TAG, "Cannot find " + procPath + "...");
+        	    return null;
+        	}
+        	catch (IOException e) {
+        		Slog.d(TAG, "Ran into problems reading " + procPath + "...");
+        	}
+        	return null;
+        }
+        
+        void initialRecord(long nowRtc, long d){
+        	int uid = getUidFromPackage(mBroadcastStats.mPackageName);
+        	
+        	startRtc = nowRtc;
+        	delay = d;
+        	
+        	String str = new String("uid_stat/" + uid + "/tcp_rcv");
+        	str = readProc(str);
+        	tcpReceive = str == null ? 0 : Integer.parseInt(str);
+        	
+        	str = new String("uid_stat/" + uid + "/tcp_snd");
+        	str = readProc(str);
+        	tcpSend = str == null ? 0 : Integer.parseInt(str);
+        	
+        }
+        
+        void addRecords(long start, long duration, long delay, int networkStat, int vibrationStat, int soundStat, int screenStat, int gpsStat, long lastFocus){
+        	records.add(new WakeUpRecord(start, duration, delay, networkStat, vibrationStat, soundStat, screenStat, gpsStat, lastFocus));
+        	
+        	WakeUpRecord r = records.get(records.size()-1);
+        	
+        	while(records.size() > 500 || start - r.mStartTime > 24*60*60*1000){
+        		records.remove(records.size()-1);
+        		r = records.get(records.size()-1);
+        	}
+        }
+        
+        void finishRecord(long stopRtc){
+        	int uid = getUidFromPackage(mBroadcastStats.mPackageName);
+        	
+        	String str = new String("uid_stat/" + uid + "/tcp_rcv");
+        	str = readProc(str);
+        	int tcpR = str == null ? 0 : Integer.parseInt(str);
+        	
+        	str = new String("uid_stat/" + uid + "/tcp_snd");
+        	str = readProc(str);
+        	int tcpS = str == null ? 0 : Integer.parseInt(str);
+        	
+        	int vibration, sound, screen, gps;
+        	long lastFocus;
+        	
+        	IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+    		
+    		try{
+    			vibration = mrm.isGrant(uid, startRtc, stopRtc, MultiResourceManagerService.HARDWARE_VIBRATION) ? 1 : 0;
+    			sound = mrm.isGrant(uid, startRtc, stopRtc, MultiResourceManagerService.HARDWARE_SOUND) ? 1 : 0;
+    			screen = mrm.isGrant(uid, startRtc, stopRtc, MultiResourceManagerService.HARDWARE_SCREEN) ? 1 : 0;
+    			gps = mrm.isGrant(uid, startRtc, stopRtc, MultiResourceManagerService.HARDWARE_GPS) ? 1 : 0;
+    			lastFocus = mrm.lastFocus(uid);
+    		} catch(Exception e){
+    			e.printStackTrace();
+    			return;
+    		}
+        			
+        	addRecords(startRtc, stopRtc - startRtc, delay, tcpR - tcpReceive + tcpS - tcpSend, vibration, sound, screen, gps, lastFocus);
         }
     }
     
@@ -172,6 +345,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
     
     public AlarmManagerService(Context context) {
         mContext = context;
+        mMyContext = context;
         mDescriptor = init();
 
         // We have to set current TimeZone info to kernel
@@ -198,6 +372,8 @@ class AlarmManagerService extends IAlarmManager.Stub {
         mClockReceiver.scheduleTimeTickEvent();
         mClockReceiver.scheduleDateChangedEvent();
         mUninstallReceiver = new UninstallReceiver();
+        
+        mLastDate = Calendar.getInstance();
         
         if (mDescriptor != -1) {
             mWaitThread.start();
@@ -486,30 +662,42 @@ class AlarmManagerService extends IAlarmManager.Stub {
         return nextAlarm;
     }
     
+    /**
+     * Policy of Alarm Manager.
+     */
+    private long getWakeUpTimeInternal(MyAlarm alarm){
+    	long elapsedTime = android.os.SystemClock.elapsedRealtime();
+    	
+    	Slog.i(TAG,"MyLogcat getWakeUpTimeInternal(). elapsedTime = " + elapsedTime + " alarm = " + alarm.toString());
+    	
+    	IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
+		
+		try{
+			Slog.i(TAG,"MyLogcat getWakeUpTimeInternal(). uid: " + alarm.operation.getCreatorUid() + 
+					" lastFocus: " + rtc2Str(mrm.lastFocus(alarm.operation.getCreatorUid())));
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+    	
+    	return alarm.when;
+//    	return alarm.when + 100000000;
+    }
+    
     private void setLocked(MyAlarm alarm)
     {
 	    if (mDescriptor != -1)
 	    {
 	    	if (mEnableResouceManager)
 	    	{
-	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
-	    		
-	    		long when = 0;
-	    		try{
-	    			when = mrm.getWakeUpTime();
-	    		} catch(Exception e) {
-	    			e.printStackTrace();
-	    			return;
-	    		}
-	    		
+	    		final long when = getWakeUpTimeInternal(alarm);
 	    		long alarmSeconds, alarmNanoseconds;
 	    		
-	    		if (alarm.when < 0) {
+	    		if (when < 0) {
 		            alarmSeconds = 0;
 		            alarmNanoseconds = 0;
 		        } else {
-		            alarmSeconds = alarm.when / 1000;
-		            alarmNanoseconds = (alarm.when % 1000) * 1000 * 1000;
+		            alarmSeconds = when / 1000;
+		            alarmNanoseconds = (when % 1000) * 1000 * 1000;
 		        }
 		        
 		        set(mDescriptor, alarm.type, alarmSeconds, alarmNanoseconds);
@@ -673,6 +861,11 @@ class AlarmManagerService extends IAlarmManager.Stub {
                                 pw.print(" cmp="); pw.print(fs.mTarget.second.toShortString());
                             }
                             pw.println();
+                            
+                            
+                            for(WakeUpRecord r : fs.records){
+                            	pw.println(r.toString());
+                            }
                 }
             }
         }
@@ -694,6 +887,36 @@ class AlarmManagerService extends IAlarmManager.Stub {
     private native int waitForAlarm(int fd);
     private native int setKernelTimezone(int fd, int minuteswest);
 
+    /**
+     * Policy of Alarm Manager.
+     */
+    private boolean isServeAlarmInternal(MyAlarm alarm, long now){
+    	long elapsedTime = android.os.SystemClock.elapsedRealtime();
+    	Slog.i(TAG,"MyLogcat isServeAlarmInternal(). elapsedTime = " + elapsedTime + " alarm = " + alarm.toString());
+    	Calendar c = Calendar.getInstance();
+    	
+    	if( mLastDate.get(Calendar.MINUTE) != c.get(Calendar.MINUTE) ){
+    		try{
+    			File file = new File("/mnt/sdcard/log/" + rtc2Str(mLastDate.getTimeInMillis()) + "_alarm.log");
+    			Writer wt = new FileWriter(file);
+        		PrintWriter pw = new PrintWriter(wt); 
+        		
+        		dump(0, pw, null);
+    		} catch (Exception e) {
+                Slog.w(TAG, "Failure writing daily file.", e);
+            }
+    		
+    		mLastDate.setTimeInMillis(c.getTimeInMillis());
+    	}
+    	
+    	if (alarm.when > now) {
+            // don't fire alarms in the future
+    		return false;
+        }
+    	
+    	return true;
+    }
+    
     private void triggerAlarmsLocked(ArrayList<MyAlarm> alarmList,
                                      ArrayList<MyAlarm> triggerList,
                                      long now)
@@ -709,15 +932,8 @@ class AlarmManagerService extends IAlarmManager.Stub {
 
             if (mEnableResouceManager)
 	    	{
-	    		IMultiResourceManagerService mrm = IMultiResourceManagerService.Stub.asInterface(ServiceManager.getService(Context.RESOURCE_MANAGER_SERVICE));
-	    		
-	    		try{
-		    		if(!mrm.isServeAlarm(alarm, now)){
-		    			continue;
-		    		}
-	    		} catch(Exception e){
-	    			e.printStackTrace();
-	    			return;
+	    		if(!isServeAlarmInternal(alarm, now)){
+	    			continue;
 	    		}
 	    	}
             else {
@@ -730,6 +946,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
 	        // Note that this can happen if the user creates a new event on
 	        // the Calendar app with a reminder that is in the past. In that
 	        // case, the reminder alarm will fire immediately.
+            alarm.delay = now - alarm.when;
 	        if (localLOGV && now - alarm.when > LATE_ALARM_THRESHOLD) {
 	            Slog.v(TAG, "alarm is late! alarm time: " + alarm.when
 	                    + " now: " + now + " delay (in seconds): "
@@ -864,6 +1081,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                             if (fs.nesting == 0) {
                                 fs.nesting = 1;
                                 fs.startTime = nowELAPSED;
+                                fs.initialRecord(nowRTC, alarm.delay);
                             } else {
                                 fs.nesting++;
                             }
@@ -1094,6 +1312,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 }
                 if (inflight != null) {
                     final long nowELAPSED = SystemClock.elapsedRealtime();
+                    final long nowRtc = System.currentTimeMillis();
                     BroadcastStats bs = inflight.mBroadcastStats;
                     bs.nesting--;
                     if (bs.nesting <= 0) {
@@ -1105,6 +1324,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                     if (fs.nesting <= 0) {
                         fs.nesting = 0;
                         fs.aggregateTime += nowELAPSED - fs.startTime;
+                        fs.finishRecord(nowRtc);
                     }
                 } else {
                     mLog.w("No in-flight alarm for " + pi + " " + intent);

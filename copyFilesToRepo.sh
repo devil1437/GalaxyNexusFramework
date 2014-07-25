@@ -53,6 +53,14 @@ MyAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 IMyAlarm=$AOSPPath"frameworks/base/core/java/android/app/MyAlarm.aidl"
 IMyAlarmFolder=$AOSPPath"frameworks/base/core/java/android/app/"
 
+WindowManagerService=$AOSPPath"frameworks/base/services/java/com/android/server/wm/WindowManagerService.java"
+WindowManagerServiceFolder=$AOSPPath"frameworks/base/services/java/com/android/server/wm/"
+
+WindowAnimator=$AOSPPath"frameworks/base/services/java/com/android/server/wm/WindowAnimator.java"
+WindowAnimatorFolder=$AOSPPath"frameworks/base/services/java/com/android/server/wm/"
+
+InputMonitor=$AOSPPath"frameworks/base/services/java/com/android/server/wm/InputMonitor.java"
+InputMonitorFolder=$AOSPPath"frameworks/base/services/java/com/android/server/wm/"
 
 if diff $MultiResourceManagerService MultiResourceManagerService.java >/dev/null ; then
 	echo "MultiResourceManagerService.java is same"
@@ -188,4 +196,28 @@ else
 	echo "Copy MyAlarm.aidl..."
 	rm -f $IMyAlarm
 	cp MyAlarm.aidl $IMyAlarmFolder
+fi
+
+if diff $WindowManagerService WindowManagerService.java >/dev/null ; then
+	echo "WindowManagerService.java is same"
+else
+	echo "Copy WindowManagerService.java..."
+	rm -f $WindowManagerService
+	cp WindowManagerService.java $WindowManagerServiceFolder
+fi
+
+if diff $WindowAnimator WindowAnimator.java >/dev/null ; then
+	echo "WindowAnimator.java is same"
+else
+	echo "Copy WindowAnimator.java..."
+	rm -f $WindowAnimator
+	cp WindowAnimator.java $WindowAnimatorFolder
+fi
+
+if diff $InputMonitor InputMonitor.java >/dev/null ; then
+	echo "InputMonitor.java is same"
+else
+	echo "Copy InputMonitor.java..."
+	rm -f $InputMonitor
+	cp InputMonitor.java $InputMonitorFolder
 fi

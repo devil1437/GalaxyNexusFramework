@@ -12,6 +12,7 @@ public class MyAlarm implements Parcelable
         public int type;
         public int count;
         public long when;
+        public long delay;
         public long repeatInterval;
         public PendingIntent operation;
         
@@ -27,14 +28,16 @@ public class MyAlarm implements Parcelable
             dest.writeInt(type);
             dest.writeInt(count);
             dest.writeLong(when);
+            dest.writeLong(delay);
             dest.writeLong(repeatInterval);
             dest.writeParcelable(operation, flags);
         }
 
-        private void readFromParcel(Parcel in) {
+        public void readFromParcel(Parcel in) {
             type = in.readInt();
             count = in.readInt();
             when = in.readLong();
+            delay = in.readLong();
             repeatInterval = in.readLong();
             operation = (PendingIntent) in.readParcelable(PendingIntent.class.getClassLoader());
         }
@@ -50,6 +53,7 @@ public class MyAlarm implements Parcelable
         
         public MyAlarm() {
             when = 0;
+            delay = 0;
             repeatInterval = 0;
             operation = null;
         }
